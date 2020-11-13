@@ -223,6 +223,11 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
 									callback.invoke("Download manager failed to download from  " + url + ". Status Code = " + statusCode, null, null);
 									return;
 								}
+								else if (statusCode == DownloadManager.PAUSED_WAITING_FOR_NETWORK) {
+									service.shutdown();
+									callback.invoke("Download manager failed to download from  " + url + ". Status Code = " + statusCode, null, null);
+									return;
+								}
 								else {
 									service.shutdown();
 									return;
