@@ -218,24 +218,18 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
 								int statusCode = c.getInt(c.getColumnIndex(DownloadManager.COLUMN_STATUS));
 								// for internal server error (500) Download manager go to
 								// pause state with retry option
-								if (statusCode == DownloadManager.STATUS_PAUSED) {
+								if (statusCode == DownloadManager.STATUS_SUCCESSFUL) {
 									service.shutdown();
-									callback.invoke("Download manager failed to download from  " + url + ". Status Code = " + statusCode, null, null);
 									return;
 								}
-								else if (statusCode == DownloadManager.PAUSED_WAITING_FOR_NETWORK) {
+								else if (statusCode == DownloadManager.STATUS_PAUSED) {
 									service.shutdown();
 									callback.invoke("Download manager failed to download from  " + url + ". Status Code = " + statusCode, null, null);
-									return;
-								}
-								else {
-									service.shutdown();
 									return;
 								}
 							}
 						} finally {
 							if (c != null) {
-								service.shutdown();
 								c.close();
 							}
 						}
@@ -243,7 +237,7 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
 				};
 				androidDownloadManagerTaskTable.put(taskId, Long.valueOf(downloadManagerId));
 				service = Executors.newSingleThreadScheduledExecutor();
-				service.scheduleAtFixedRate(downloadListener, 1, 1, TimeUnit.SECONDS);
+				service.scheduleAtFixedRate(downloadListener, 1, 3, TimeUnit.SECONDS);
 				appCtx.registerReceiver(this, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
 				return;
 
@@ -565,6 +559,8 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
 	private void done(Response resp) {
 		boolean isBlobResp = isBlobResponse(resp);
 		emitStateEvent(getResponseInfo(resp, isBlobResp));
+		// close the timer
+		service.shutdown();
 		switch (responseType) {
 			case KeepInMemory:
 				try {
